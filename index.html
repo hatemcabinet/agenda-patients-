@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>Agenda Patients</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  h1 { text-align: center; }
+  form { margin-bottom: 20px; }
+  label { display: block; margin-top: 10px; }
+  input { width: 100%; padding: 8px; }
+  button { margin-top: 10px; padding: 10px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+  th, td { padding: 10px; border: 1px solid #ccc; }
+  th { background-color: #f4f4f4; }
+</style>
+</head>
+<body>
+
+<h1>Agenda Rendez-vous Patients</h1>
+
+<form id="rdvForm">
+  <label>Nom du patient:
+    <input type="text" id="nom" required />
+  </label>
+  <label>Date:
+    <input type="date" id="date" required />
+  </label>
+  <label>Heure:
+    <input type="time" id="heure" required />
+  </label>
+  <label>Motif:
+    <input type="text" id="motif" />
+  </label>
+  <button type="submit">Ajouter Rendez-vous</button>
+</form>
+
+<table id="listeRdv">
+  <thead>
+    <tr>
+      <th>Nom</th>
+      <th>Date</th>
+      <th>Heure</th>
+      <th>Motif</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+  const form = document.getElementById('rdvForm');
+  const tbody = document.querySelector('#listeRdv tbody');
+
+  let rendezVous = [];
+
+  function afficherRendezVous() {
+    tbody.innerHTML = '';
+    rendezVous.forEach((rdv, index) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${rdv.nom}</td>
+        <td>${rdv.date}</td>
+        <td>${rdv.heure}</td>
+        <td>${rdv.motif}</td>
+        <td>
+          <button onclick="supprimerRDV(${index})">Supprimer</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const nouveauRDV = {
+      nom: document.getElementById('nom').value,
+      date: document.getElementById('date').value,
+      heure: document.getElementById('heure').value,
+      motif: document.getElementById('motif').value,
+    };
+    rendezVous.push(nouveauRDV);
+    afficherRendezVous();
+    form.reset();
+  });
+
+  function supprimerRDV(index) {
+    rendezVous.splice(index, 1);
+    afficherRendezVous();
+  }
+
+  window.onload = () => {
+    const saved = localStorage.getItem('rendezVous');
+    if (saved) {
+      rendezVous = JSON.parse(saved);
+      afficherRendezVous();
+    }
+  };
+
+  window.onbeforeunload = () => {
+    localStorage.setItem('rendezVous', JSON.stringify(rendezVous));
+  };
+</script>
+
+</body>
+</html>
