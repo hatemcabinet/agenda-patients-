@@ -2,131 +2,78 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<title>Agenda Patients</title>
+<title>Agenda Protegé</title>
+<!-- Inclure FullCalendar CSS -->
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css' rel='stylesheet' />
+<!-- Inclure FullCalendar JS -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js'></script>
 <style>
   body { font-family: Arial, sans-serif; margin: 20px; }
-  h1 { text-align: center; }
-  form, #protected-section { margin-bottom: 20px; }
-  label { display: block; margin-top: 10px; }
-  input { width: 100%; padding: 8px; }
-  button { margin-top: 10px; padding: 10px; }
-  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-  th, td { padding: 10px; border: 1px solid #ccc; }
-  th { background-color: #f4f4f4; }
+  #calendar { max-width: 900px; margin: 40px auto; }
+  /* Styles pour login */
+  #login { text-align: center; margin-top: 50px; }
+  #protected { display: none; }
 </style>
 </head>
 <body>
 
-<h1>Agenda Rendez-vous Patients</h1>
+<h1>Agenda Patient</h1>
 
-<!-- Formulaire d'authentification -->
-<div id="auth-section">
-  <h2>Connexion</h2>
-  <input type="password" id="motdepasse" placeholder="Entrez le mot de passe" />
-  <button onclick="verifierMotDePasse()">Se connecter</button>
+<!-- Formulaire de login -->
+<div id="login">
+  <label>Mot de passe : <input type="password" id="password" /></label>
+  <button onclick="verifPassword()">Entrer</button>
 </div>
 
-<!-- Section protégée -->
-<div id="protected-section" style="display:none;">
-  <form id="rdvForm">
-    <label>Nom du patient:
-      <input type="text" id="nom" required />
-    </label>
-    <label>Date:
-      <input type="date" id="date" required />
-    </label>
-    <label>Heure:
-      <input type="time" id="heure" required />
-    </label>
-    <label>Motif:
-      <input type="text" id="motif" />
-    </label>
-    <button type="submit">Ajouter Rendez-vous</button>
-  </form>
-
-  <table id="listeRdv">
-    <thead>
-      <tr>
-        <th>Nom</th>
-        <th>Date</th>
-        <th>Heure</th>
-        <th>Motif</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<!-- Zone protégée avec calendrier -->
+<div id="protected">
+  <button onclick="changeView('dayGridMonth')">Vue Mensuelle</button>
+  <button onclick="changeView('timeGridWeek')">Vue Hebdomadaire</button>
+  <div id='calendar'></div>
 </div>
 
 <script>
-const motDePasseCorrect = "monmotdepasse"; // Modifie ceci par ton mot de passe
+  // Mot de passe simple pour la demo
+  const monMotDePasse = 'secret123';
 
-function verifierMotDePasse() {
-  const mdp = document.getElementById('motdepasse').value;
-  if (mdp === motDePasseCorrect) {
-    document.getElementById('auth-section').style.display = 'none';
-    document.getElementById('protected-section').style.display = 'block';
-    chargerRendezVous();
-  } else {
-    alert('Mot de passe incorrect');
+  function verifPassword() {
+    const inputPwd = document.getElementById('password').value;
+    if (inputPwd === monMotDePasse) {
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('protected').style.display = 'block';
+      initialiserCalendar();
+    } else {
+      alert('Mot de passe incorrect');
+    }
   }
-}
 
-const form = document.getElementById('rdvForm');
-const tbody = document.querySelector('#listeRdv tbody');
-let rendezVous = [];
+  let calendar;
 
-function afficherRendezVous() {
-  tbody.innerHTML = '';
-  rendezVous.forEach((rdv, index) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${rdv.nom}</td>
-      <td>${rdv.date}</td>
-      <td>${rdv.heure}</td>
-      <td>${rdv.motif}</td>
-      <td><button onclick="supprimerRDV(${index})">Supprimer</button></td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-form.addEventListener('submit', function(e) {
-  e.preventDefault();
-  const nouveauRDV = {
-    nom: document.getElementById('nom').value,
-    date: document.getElementById('date').value,
-    heure: document.getElementById('heure').value,
-    motif: document.getElementById('motif').value,
-  };
-  rendezVous.push(nouveauRDV);
-  sauvegarderRendezVous();
-  afficherRendezVous();
-  form.reset();
-});
-
-function supprimerRDV(index) {
-  rendezVous.splice(index, 1);
-  sauvegarderRendezVous();
-  afficherRendezVous();
-}
-
-function sauvegarderRendezVous() {
-  localStorage.setItem('rendezVous', JSON.stringify(rendezVous));
-}
-
-function chargerRendezVous() {
-  const saved = localStorage.getItem('rendezVous');
-  if (saved) {
-    rendezVous = JSON.parse(saved);
-    afficherRendezVous();
+  function initialiserCalendar() {
+    // Initialisation du calendrier
+    calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+      initialView: 'dayGridMonth',
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek'
+      },
+      locale: 'fr',
+      events: [
+        // Exemple d'événements
+        { title: 'RDV Patient 1', start: '2025-10-10T10:00:00' },
+        { title: 'RDV Patient 2', start: '2025-10-15T14:00:00' }
+      ]
+    });
+    calendar.render();
   }
-}
 
-// Charger les rendez-vous au chargement
-window.onload = () => {
-  chargerRendezVous();
-};
+  function changeView(viewType) {
+    if (calendar) {
+      calendar.changeView(viewType);
+    }
+  }
 </script>
+
 </body>
 </html>
