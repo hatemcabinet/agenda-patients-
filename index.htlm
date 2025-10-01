@@ -1,39 +1,33 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <title>Agenda Patients</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h1 { text-align: center; }
-    form { margin-bottom: 20px; }
-    label { display: block; margin-top: 10px; }
-    input { width: 100%; padding: 8px; }
-    button { margin-top: 10px; padding: 10px; }
-    #calendar { max-width: 900px; margin: 30px auto; }
-    #blocAgenda { display: none; }
-  </style>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" />
+<meta charset="UTF-8" />
+<title>Agenda Patients</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  h1 { text-align: center; }
+  form, #protected-section { margin-bottom: 20px; }
+  label { display: block; margin-top: 10px; }
+  input { width: 100%; padding: 8px; }
+  button { margin-top: 10px; padding: 10px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+  th, td { padding: 10px; border: 1px solid #ccc; }
+  th { background-color: #f4f4f4; }
+</style>
 </head>
 <body>
 
-<script>
-  // Mot de passe JS basique
-  var mdpCorrect = "secret"; // <<< Change ici ton mot de passe si besoin !
-  var reponse = prompt("Mot de passe pour accéder à l'agenda :");
-  if (reponse !== mdpCorrect) {
-    alert("Accès refusé !");
-    window.location.href = "https://www.google.com";
-  } else {
-    window.onload = function() {
-      document.getElementById("blocAgenda").style.display = "block";
-    }
-  }
-</script>
+<h1>Agenda Rendez-vous Patients</h1>
 
-<div id="blocAgenda">
-  <h1>Agenda Rendez-vous Patients (vue avancée)</h1>
+<!-- Formulaire d'authentification -->
+<div id="auth-section">
+  <h2>Connexion</h2>
+  <input type="password" id="motdepasse" placeholder="Entrez le mot de passe" />
+  <button onclick="verifierMotDePasse()">Se connecter</button>
+</div>
 
+<!-- Section protégée -->
+<div id="protected-section" style="display:none;">
   <form id="rdvForm">
     <label>Nom du patient:
       <input type="text" id="nom" required />
@@ -50,66 +44,89 @@
     <button type="submit">Ajouter Rendez-vous</button>
   </form>
 
-  <div id="calendar"></div>
+  <table id="listeRdv">
+    <thead>
+      <tr>
+        <th>Nom</th>
+        <th>Date</th>
+        <th>Heure</th>
+        <th>Motif</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 <script>
-  // Gestion des rendez-vous dans FullCalendar
-  let rendezVous = [];
+const motDePasseCorrect = "monmotdepasse"; // Modifie ceci par ton mot de passe
 
-  function getEventsFromLocalStorage() {
-    const saved = localStorage.getItem('rendezVous');
-    if (saved) {
-      return JSON.parse(saved).map(rdv => ({
-        title: rdv.nom + (rdv.motif ? " - " + rdv.motif : ""),
-        start: rdv.date + 'T' + rdv.heure
-      }));
-    } else {
-      return [];
-    }
+function verifierMotDePasse() {
+  const mdp = document.getElementById('motdepasse').value;
+  if (mdp === motDePasseCorrect) {
+    document.getElementById('auth-section').style.display = 'none';
+    document.getElementById('protected-section').style.display = 'block';
+    chargerRendezVous();
+  } else {
+    alert('Mot de passe incorrect');
   }
+}
 
-  document.addEventListener('DOMContentLoaded', function() {
-    var calendarEl = document.getElementById('calendar');
+const form = document.getElementById('rdvForm');
+const tbody = document.querySelector('#listeRdv tbody');
+let rendezVous = [];
 
-    var calendar = new FullCalendar.Calendar(calendarEl, {
-      initialView: 'dayGridMonth',
-      headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'dayGridMonth,timeGridWeek,timeGridDay'
-      },
-      events: getEventsFromLocalStorage()
-    });
-
-    window.calendar = calendar;
-    calendar.render();
+function afficherRendezVous() {
+  tbody.innerHTML = '';
+  rendezVous.forEach((rdv, index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${rdv.nom}</td>
+      <td>${rdv.date}</td>
+      <td>${rdv.heure}</td>
+      <td>${rdv.motif}</td>
+      <td><button onclick="supprimerRDV(${index})">Supprimer</button></td>
+    `;
+    tbody.appendChild(tr);
   });
+}
 
-  const form = document.getElementById('rdvForm');
-  if (form) {
-    form.addEventListener('submit', function(e) {
-      e.preventDefault();
-      const nouveauRDV = {
-        nom: document.getElementById('nom').value,
-        date: document.getElementById('date').value,
-        heure: document.getElementById('heure').value,
-        motif: document.getElementById('motif').value
-      };
-      rendezVous = localStorage.getItem('rendezVous') ? JSON.parse(localStorage.getItem('rendezVous')) : [];
-      rendezVous.push(nouveauRDV);
-      localStorage.setItem('rendezVous', JSON.stringify(rendezVous));
-      
-      // Ajouter à FullCalendar
-      window.calendar.addEvent({
-        title: nouveauRDV.nom + (nouveauRDV.motif ? " - " + nouveauRDV.motif : ""),
-        start: nouveauRDV.date + 'T' + nouveauRDV.heure
-      });
-      form.reset();
-    });
+form.addEventListener('submit', function(e) {
+  e.preventDefault();
+  const nouveauRDV = {
+    nom: document.getElementById('nom').value,
+    date: document.getElementById('date').value,
+    heure: document.getElementById('heure').value,
+    motif: document.getElementById('motif').value,
+  };
+  rendezVous.push(nouveauRDV);
+  sauvegarderRendezVous();
+  afficherRendezVous();
+  form.reset();
+});
+
+function supprimerRDV(index) {
+  rendezVous.splice(index, 1);
+  sauvegarderRendezVous();
+  afficherRendezVous();
+}
+
+function sauvegarderRendezVous() {
+  localStorage.setItem('rendezVous', JSON.stringify(rendezVous));
+}
+
+function chargerRendezVous() {
+  const saved = localStorage.getItem('rendezVous');
+  if (saved) {
+    rendezVous = JSON.parse(saved);
+    afficherRendezVous();
   }
-</script>
+}
 
+// Charger les rendez-vous au chargement
+window.onload = () => {
+  chargerRendezVous();
+};
+</script>
 </body>
 </html>
