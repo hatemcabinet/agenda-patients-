@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Agenda Patients</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { text-align: center; }
+    form { margin-bottom: 20px; }
+    label { display: block; margin-top: 10px; }
+    input { width: 100%; padding: 8px; }
+    button { margin-top: 10px; padding: 10px; }
+    #calendar { max-width: 900px; margin: 30px auto; }
+    #blocAgenda { display: none; }
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" />
+</head>
+<body>
+
+<script>
+  // Mot de passe JS basique
+  var mdpCorrect = "secret"; // <<< Change ici ton mot de passe si besoin !
+  var reponse = prompt("Mot de passe pour accéder à l'agenda :");
+  if (reponse !== mdpCorrect) {
+    alert("Accès refusé !");
+    window.location.href = "https://www.google.com";
+  } else {
+    window.onload = function() {
+      document.getElementById("blocAgenda").style.display = "block";
+    }
+  }
+</script>
+
+<div id="blocAgenda">
+  <h1>Agenda Rendez-vous Patients (vue avancée)</h1>
+
+  <form id="rdvForm">
+    <label>Nom du patient:
+      <input type="text" id="nom" required />
+    </label>
+    <label>Date:
+      <input type="date" id="date" required />
+    </label>
+    <label>Heure:
+      <input type="time" id="heure" required />
+    </label>
+    <label>Motif:
+      <input type="text" id="motif" />
+    </label>
+    <button type="submit">Ajouter Rendez-vous</button>
+  </form>
+
+  <div id="calendar"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<script>
+  // Gestion des rendez-vous dans FullCalendar
+  let rendezVous = [];
+
+  function getEventsFromLocalStorage() {
+    const saved = localStorage.getItem('rendezVous');
+    if (saved) {
+      return JSON.parse(saved).map(rdv => ({
+        title: rdv.nom + (rdv.motif ? " - " + rdv.motif : ""),
+        start: rdv.date + 'T' + rdv.heure
+      }));
+    } else {
+      return [];
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+      },
+      events: getEventsFromLocalStorage()
+    });
+
+    window.calendar = calendar;
+    calendar.render();
+  });
+
+  const form = document.getElementById('rdvForm');
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const nouveauRDV = {
+        nom: document.getElementById('nom').value,
+        date: document.getElementById('date').value,
+        heure: document.getElementById('heure').value,
+        motif: document.getElementById('motif').value
+      };
+      rendezVous = localStorage.getItem('rendezVous') ? JSON.parse(localStorage.getItem('rendezVous')) : [];
+      rendezVous.push(nouveauRDV);
+      localStorage.setItem('rendezVous', JSON.stringify(rendezVous));
+      
+      // Ajouter à FullCalendar
+      window.calendar.addEvent({
+        title: nouveauRDV.nom + (nouveauRDV.motif ? " - " + nouveauRDV.motif : ""),
+        start: nouveauRDV.date + 'T' + nouveauRDV.heure
+      });
+      form.reset();
+    });
+  }
+</script>
+
+</body>
+</html>
